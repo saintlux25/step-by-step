@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Step by Step">
+  <meta name="theme-color" content="#1a1a1a">
+  <meta name="description" content="A quiet daily step tracker. One number a day, a streak, two lifelines a month.">
+  
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  
+  <title>Step by Step</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #f5f5f5;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      padding: max(0px, env(safe-area-inset-top)) max(0px, env(safe-area-inset-right)) max(0px, env(safe-area-inset-bottom)) max(0px, env(safe-area-inset-left));
+      overscroll-behavior-y: contain;
+    }
+
+    @supports (padding: max(0px)) {
+      body {
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        padding-left: max(12px, env(safe-area-inset-left));
+      }
+    }
+
+    input {
+      -webkit-text-size-adjust: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    button {
+      -webkit-text-size-adjust: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: 100vh;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* Onboarding Screen */
+    .onboard-screen {
+      padding: 24px;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .onboard-content {
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .onboard-content h1 {
+      font-size: 32px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .onboard-content p {
+      font-size: 16px;
+      color: #999;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #ccc;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #f5f5f5;
+      font-size: 16px;
+      min-height: 44px;
+    }
+
+    .form-group input::placeholder {
+      color: #666;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px 24px;
+      background: #5a9fd4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      min-height: 44px;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:active {
+      background: #4a8fc4;
+    }
+
+    .btn-primary:disabled {
+      background: #444;
+      color: #666;
+    }
+
+    /* Header */
+    .header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn-icon:active {
+      background: #2a2a2a;
+      color: #f5f5f5;
+    }
+
+    /* Tracker Screen */
+    .tracker-screen {
+      padding: 0 24px 24px;
+      overflow-y: auto;
+    }
+
+    .tracker-content {
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: #2a2a2a;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: #5a9fd4;
+    }
+
+    .stat-card.goal {
+      background: #2a2a2a;
+    }
+
+    .stat-card.goal .stat-value {
+      color: #f5f5f5;
+    }
+
+    .stat-card.progress .stat-value {
+      color: #5a9fd4;
+    }
+
+    .input-section {
+      margin-bottom: 32px;
+    }
+
+    .input-label {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 12px;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 14px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #f5f5f5;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      min-height: 44px;
+    }
+
+    .input-row input::placeholder {
+      color: #666;
+    }
+
+    .btn-increment {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #5a9fd4;
+      font-size: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-increment:active {
+      background: #5a9fd4;
+      border-color: #5a9fd4;
+      color: #1a1a1a;
+    }
+
+    .input-note {
+      padding: 12px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #f5f5f5;
+      font-size: 16px;
+      min-height: 44px;
+      resize: none;
+      font-family: inherit;
+    }
+
+    .input-note::placeholder {
+      color: #666;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .btn-secondary {
+      padding: 12px 20px;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #5a9fd4;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      min-height: 44px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-secondary:active {
+      background: #3a3a3a;
+      border-color: #5a9fd4;
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary.full {
+      grid-column: 1 / -1;
+    }
+
+    .lifeline-info {
+      background: #2a2a2a;
+      border-left: 3px solid #5a9fd4;
+      padding: 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #ccc;
+      margin-bottom: 16px;
+    }
+
+    .streak-counter {
+      background: #2a2a2a;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .streak-label {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .streak-value {
+      font-size: 32px;
+      font-weight: 600;
+      color: #5a9fd4;
+    }
+
+    /* History Screen */
+    .history-screen {
+      padding: 0 24px 24px;
+      overflow-y: auto;
+    }
+
+    .history-list {
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .history-item {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .history-item-content {
+      flex: 1;
+    }
+
+    .history-date {
+      font-size: 14px;
+      color: #5a9fd4;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .history-steps {
+      font-size: 18px;
+      color: #f5f5f5;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .history-note {
+      font-size: 13px;
+      color: #999;
+      font-style: italic;
+    }
+
+    .history-badge {
+      background: #5a9fd4;
+      color: #1a1a1a;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      margin-left: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 24px;
+      color: #666;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* Rewards Screen */
+    .rewards-screen {
+      padding: 0 24px 24px;
+      overflow-y: auto;
+    }
+
+    .rewards-list {
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .reward-item {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .reward-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .reward-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f5f5f5;
+    }
+
+    .reward-target {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .reward-progress {
+      height: 6px;
+      background: #1a1a1a;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .reward-progress-bar {
+      height: 100%;
+      background: #5a9fd4;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .reward-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-reward {
+      flex: 1;
+      padding: 10px;
+      background: #5a9fd4;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      min-height: 40px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-reward:active {
+      opacity: 0.8;
+    }
+
+    .btn-reward:disabled {
+      background: #444;
+      color: #666;
+      opacity: 0.5;
+    }
+
+    .btn-reward-delete {
+      width: 40px;
+      padding: 0;
+      background: #444;
+      color: #999;
+      border: none;
+      border-radius: 6px;
+    }
+
+    .reward-item.claimed {
+      opacity: 0.6;
+    }
+
+    /* Settings Screen */
+    .settings-screen {
+      padding: 0 24px 24px;
+      overflow-y: auto;
+    }
+
+    .settings-content {
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .settings-section {
+      margin-bottom: 32px;
+    }
+
+    .settings-title {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      padding-left: 12px;
+    }
+
+    .settings-item {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .settings-item label {
+      font-size: 14px;
+      color: #f5f5f5;
+      font-weight: 500;
+    }
+
+    .settings-item input[type="time"],
+    .settings-item input[type="number"] {
+      padding: 8px 12px;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 6px;
+      color: #f5f5f5;
+      font-size: 14px;
+      min-height: 40px;
+    }
+
+    .danger-zone {
+      background: #3a2a2a;
+      border: 1px solid #5a3a3a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .danger-zone-title {
+      font-size: 12px;
+      color: #ff6b6b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .btn-danger {
+      width: 100%;
+      padding: 12px;
+      background: #5a3a3a;
+      color: #ff6b6b;
+      border: 1px solid #5a3a3a;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      min-height: 44px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-danger:active {
+      background: #7a4a4a;
+      border-color: #ff6b6b;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      width: calc(100% - 48px);
+      max-width: 360px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .modal-actions .btn-primary {
+      grid-column: 1 / -1;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      border-top: 1px solid #2a2a2a;
+      padding-top: 8px;
+      gap: 8px;
+      flex-shrink: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-btn {
+      flex: 0 0 auto;
+      padding: 12px 16px;
+      background: none;
+      border: 1px solid #444;
+      color: #999;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .nav-btn:active,
+    .nav-btn.active {
+      background: #5a9fd4;
+      color: #1a1a1a;
+      border-color: #5a9fd4;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #ff6b6b;
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 4px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2a2a2a;
+      color: #f5f5f5;
+      padding: 16px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 2000;
+      border: 1px solid #444;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateX(-50%) translateY(100px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .btn-add-reward {
+      width: 100%;
+      padding: 14px;
+      background: #5a9fd4;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      min-height: 44px;
+      margin-bottom: 24px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 12px;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #f5f5f5;
+      font-size: 16px;
+      margin-bottom: 12px;
+      min-height: 44px;
+    }
+
+    .modal-input::placeholder {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Onboarding Screen -->
+    <div class="screen onboard-screen active" id="onboardScreen">
+      <div class="onboard-content">
+        <h1>Step by Step</h1>
+        <p>A quiet daily step tracker. One number a day, a streak, two lifelines a month.</p>
+        
+        <form id="onboardForm">
+          <div class="form-group">
+            <label for="onboardName">Your name</label>
+            <input type="text" id="onboardName" placeholder="e.g., Maya" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="onboardGoal">Daily step goal</label>
+            <input type="number" id="onboardGoal" placeholder="e.g., 8000" value="8000" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="onboardCal">Calories per 1000 steps</label>
+            <input type="number" id="onboardCal" placeholder="e.g., 40" value="40" required>
+          </div>
+          
+          <button type="submit" class="btn-primary">Get started</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Tracker Screen -->
+    <div class="screen tracker-screen" id="trackerScreen">
+      <div class="header">
+        <h1>Today</h1>
+        <div class="header-actions">
+          <button class="btn-icon" id="infoBtn" title="Info">ℹ️</button>
+          <button class="btn-icon" id="settingsBtn" title="Settings">⚙️</button>
+        </div>
+      </div>
+
+      <div class="tracker-content">
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-label">Streak</div>
+            <div class="stat-value" id="streakValue">0</div>
+          </div>
+          <div class="stat-card progress">
+            <div class="stat-label">Progress</div>
+            <div class="stat-value"><span id="progressPercent">0</span>%</div>
+          </div>
+        </div>
+
+        <div class="input-section">
+          <label class="input-label">Steps today</label>
+          <div class="input-row">
+            <input type="number" id="stepsInput" placeholder="0" inputmode="numeric" min="0">
+            <button class="btn-increment" id="incBtn">+</button>
+          </div>
+          <textarea class="input-note" id="noteInput" placeholder="Optional note..."></textarea>
+        </div>
+
+        <div class="actions">
+          <button class="btn-secondary" id="saveBtn">Save</button>
+          <button class="btn-secondary" id="lifelineBtn" title="Spend a lifeline">Lifeline</button>
+        </div>
+
+        <div id="lifelineInfo" style="display: none;">
+          <div class="lifeline-info">
+            You have <strong id="lifelinesLeft">0</strong> lifeline(s) left this month. Using one will count tomorrow as a met day.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Screen -->
+    <div class="screen history-screen" id="historyScreen">
+      <div class="header">
+        <h1>History</h1>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="empty-state">
+          <p>No entries yet. Start tracking to see your history.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rewards Screen -->
+    <div class="screen rewards-screen" id="rewardsScreen">
+      <div class="header">
+        <h1>Rewards</h1>
+      </div>
+      <div class="rewards-list">
+        <button class="btn-add-reward" id="addRewardBtn">+ Add reward</button>
+        <div id="rewardsList"></div>
+        <div class="empty-state" id="rewardsEmpty" style="display: none;">
+          <p>No rewards yet. Create one to get motivated!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div class="screen settings-screen" id="settingsScreen">
+      <div class="header">
+        <h1>Settings</h1>
+      </div>
+      <div class="settings-content">
+        <div class="settings-section">
+          <div class="settings-title">Profile</div>
+          <div class="settings-item">
+            <label>Name</label>
+            <input type="text" id="settingsName" value="">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">Goals</div>
+          <div class="settings-item">
+            <label>Daily step goal</label>
+            <input type="number" id="settingsGoal" value="">
+          </div>
+          <div class="settings-item">
+            <label>Calories per 1000 steps</label>
+            <input type="number" id="settingsCal" value="">
+          </div>
+          <div class="settings-item">
+            <label>Remind at</label>
+            <input type="time" id="settingsRemind" value="">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">Data</div>
+          <button class="btn-secondary full" id="downloadBtn">Download backup</button>
+          <button class="btn-secondary full" id="restoreBtn">Restore from backup</button>
+          <input type="file" id="backupFile" accept=".json" style="display: none;">
+        </div>
+
+        <div class="settings-section danger-zone">
+          <div class="danger-zone-title">Danger zone</div>
+          <button class="btn-danger" id="resetBtn">Reset all data</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+      <button class="nav-btn active" data-screen="tracker">📊 Today</button>
+      <button class="nav-btn" data-screen="history">📈 History</button>
+      <button class="nav-btn" data-screen="rewards">🏆 Rewards</button>
+    </nav>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <h2 id="modalTitle">Modal</h2>
+      <div id="modalContent"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="modalCancel">Cancel</button>
+        <button class="btn-primary" id="modalConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script>
+    // Storage Management
+    const STORAGE_KEY = 'step-by-step-v1';
+    const OLD_KEY = 'steps-tracker-modernist';
+
+    let state = {
+      days: [],
+      lifelines: {},
+      rewards: [],
+      settings: {
+        name: 'User',
+        stepGoal: 8000,
+        calPerThousand: 40,
+        remindAt: '20:00'
+      },
+      onboarded: false
+    };
+
+    function loadState() {
+      let stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) {
+        stored = localStorage.getItem(OLD_KEY);
+        if (stored) {
+          localStorage.removeItem(OLD_KEY);
+        }
+      }
+      if (stored) {
+        state = JSON.parse(stored);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function showToast(message, duration = 2000) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, duration);
+    }
+
+    function switchScreen(screenName) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenName + 'Screen').classList.add('active');
+      
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.screen === screenName) {
+          btn.classList.add('active');
+        }
+      });
+
+      // Refresh screen data
+      if (screenName === 'tracker') {
+        updateTrackerScreen();
+      } else if (screenName === 'history') {
+        updateHistoryScreen();
+      } else if (screenName === 'rewards') {
+        updateRewardsScreen();
+      }
+    }
+
+    function getToday() {
+      const now = new Date();
+      return now.toISOString().split('T')[0];
+    }
+
+    function getTodayEntry() {
+      const today = getToday();
+      return state.days.find(d => d.date === today);
+    }
+
+    function isMetDay(date) {
+      const entry = state.days.find(d => d.date === date);
+      if (entry && entry.steps >= state.settings.stepGoal) {
+        return true;
+      }
+      const [year, month] = date.split('-');
+      const monthKey = `${year}-${month}`;
+      if (state.lifelines[monthKey]) {
+        return state.lifelines[monthKey].includes(date);
+      }
+      return false;
+    }
+
+    function getStreak() {
+      let streak = 0;
+      let checkDate = new Date();
+      
+      // Start from today if met, otherwise yesterday
+      const today = getToday();
+      if (!isMetDay(today)) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+      
+      while (true) {
+        const dateStr = checkDate.toISOString().split('T')[0];
+        if (isMetDay(dateStr)) {
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
+    function getLifelinesThisMonth() {
+      const now = new Date();
+      const monthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      return (state.lifelines[monthKey] || []).length;
+    }
+
+    function getMonthProgress() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const monthStr = String(month).padStart(2, '0');
+      const monthKey = `${year}-${monthStr}`;
+
+      let met = 0;
+      for (let i = 1; i <= now.getDate(); i++) {
+        const dateStr = `${year}-${monthStr}-${String(i).padStart(2, '0')}`;
+        if (isMetDay(dateStr)) {
+          met++;
+        }
+      }
+      return { met, total: now.getDate() };
+    }
+
+    function updateTrackerScreen() {
+      const today = getToday();
+      const entry = getTodayEntry();
+      
+      document.getElementById('streakValue').textContent = getStreak();
+      const progress = getMonthProgress();
+      document.getElementById('progressPercent').textContent = progress.total > 0 ? Math.round(progress.met / progress.total * 100) : 0;
+      
+      if (entry) {
+        document.getElementById('stepsInput').value = entry.steps;
+        document.getElementById('noteInput').value = entry.note || '';
+      } else {
+        document.getElementById('stepsInput').value = '';
+        document.getElementById('noteInput').value = '';
+      }
+
+      const lifelinesLeft = 2 - getLifelinesThisMonth();
+      const met = isMetDay(today);
+      const yesterdayMet = getStreak() > 0 || isMetDay(new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0]);
+
+      if (!met && yesterdayMet && lifelinesLeft > 0) {
+        document.getElementById('lifelineInfo').style.display = 'block';
+        document.getElementById('lifelinesLeft').textContent = lifelinesLeft;
+        document.getElementById('lifelineBtn').disabled = false;
+      } else {
+        document.getElementById('lifelineInfo').style.display = 'none';
+        document.getElementById('lifelineBtn').disabled = true;
+      }
+    }
+
+    function updateHistoryScreen() {
+      const historyList = document.getElementById('historyList');
+      const sorted = [...state.days].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (sorted.length === 0) {
+        historyList.innerHTML = '<div class="empty-state"><p>No entries yet. Start tracking to see your history.</p></div>';
+        return;
+      }
+
+      historyList.innerHTML = sorted.map(day => {
+        const met = isMetDay(day.date);
+        const badge = met ? '<span class="history-badge">Met 🎯</span>' : '';
+        return `
+          <div class="history-item">
+            <div class="history-item-content">
+              <div class="history-date">${new Date(day.date).toLocaleDateString()}</div>
+              <div class="history-steps">${day.steps} steps</div>
+              ${day.note ? `<div class="history-note">${day.note}</div>` : ''}
+            </div>
+            ${badge}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateRewardsScreen() {
+      const rewardsList = document.getElementById('rewardsList');
+      const rewardsEmpty = document.getElementById('rewardsEmpty');
+
+      if (state.rewards.length === 0) {
+        rewardsList.innerHTML = '';
+        rewardsEmpty.style.display = 'block';
+        return;
+      }
+
+      rewardsEmpty.style.display = 'none';
+      const progress = getMonthProgress();
+
+      rewardsList.innerHTML = state.rewards.map(reward => {
+        const percent = Math.min(100, Math.round(progress.met / reward.target * 100));
+        const canClaim = progress.met >= reward.target && (!reward.claimed || reward.claimedMonth !== new Date().toISOString().split('T')[0].substring(0, 7));
+        const claimed = reward.claimed && reward.claimedMonth === new Date().toISOString().split('T')[0].substring(0, 7);
+
+        return `
+          <div class="reward-item ${claimed ? 'claimed' : ''}">
+            <div class="reward-header">
+              <div>
+                <div class="reward-title">${reward.title}</div>
+                <div class="reward-target">${progress.met} / ${reward.target} days</div>
+              </div>
+            </div>
+            <div class="reward-progress">
+              <div class="reward-progress-bar" style="width: ${percent}%"></div>
+            </div>
+            <div class="reward-actions">
+              <button class="btn-reward" onclick="claimReward('${reward.id}')" ${!canClaim ? 'disabled' : ''}>
+                ${claimed ? 'Claimed ✓' : 'Claim'}
+              </button>
+              <button class="btn-reward-delete" onclick="deleteReward('${reward.id}')">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function claimReward(id) {
+      const reward = state.rewards.find(r => r.id === id);
+      if (reward) {
+        reward.claimed = true;
+        reward.claimedMonth = new Date().toISOString().split('T')[0].substring(0, 7);
+        saveState();
+        updateRewardsScreen();
+        showToast('Reward claimed! 🎉');
+      }
+    }
+
+    function deleteReward(id) {
+      state.rewards = state.rewards.filter(r => r.id !== id);
+      saveState();
+      updateRewardsScreen();
+      showToast('Reward deleted');
+    }
+
+    function generateId() {
+      return Math.random().toString(36).substr(2, 8);
+    }
+
+    function downloadBackup() {
+      const backup = JSON.stringify(state, null, 2);
+      const blob = new Blob([backup], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `step-by-step-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup downloaded');
+    }
+
+    function restoreBackup() {
+      document.getElementById('backupFile').click();
+    }
+
+    function resetData() {
+      if (confirm('Are you absolutely sure? This will delete all your data.')) {
+        state = {
+          days: [],
+          lifelines: {},
+          rewards: [],
+          settings: {
+            name: state.settings.name,
+            stepGoal: state.settings.stepGoal,
+            calPerThousand: state.settings.calPerThousand,
+            remindAt: state.settings.remindAt
+          },
+          onboarded: true
+        };
+        saveState();
+        updateTrackerScreen();
+        updateHistoryScreen();
+        updateRewardsScreen();
+        showToast('Data reset');
+      }
+    }
+
+    // Event Listeners
+    document.getElementById('onboardForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.settings.name = document.getElementById('onboardName').value;
+      state.settings.stepGoal = parseInt(document.getElementById('onboardGoal').value);
+      state.settings.calPerThousand = parseInt(document.getElementById('onboardCal').value);
+      state.onboarded = true;
+      saveState();
+      document.getElementById('onboardScreen').classList.remove('active');
+      document.getElementById('trackerScreen').classList.add('active');
+      updateTrackerScreen();
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const today = getToday();
+      const steps = parseInt(document.getElementById('stepsInput').value) || 0;
+      const note = document.getElementById('noteInput').value;
+      
+      let entry = getTodayEntry();
+      if (!entry) {
+        entry = { id: generateId(), date: today, steps: 0, note: '' };
+        state.days.push(entry);
+      }
+      
+      entry.steps = steps;
+      entry.note = note;
+      saveState();
+      updateTrackerScreen();
+      updateHistoryScreen();
+      updateRewardsScreen();
+      showToast('Saved ✓');
+    });
+
+    document.getElementById('incBtn').addEventListener('click', () => {
+      const input = document.getElementById('stepsInput');
+      input.value = (parseInt(input.value) || 0) + 100;
+    });
+
+    document.getElementById('lifelineBtn').addEventListener('click', () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      
+      const year = tomorrow.getFullYear();
+      const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+      const monthKey = `${year}-${month}`;
+      
+      if (!state.lifelines[monthKey]) {
+        state.lifelines[monthKey] = [];
+      }
+      state.lifelines[monthKey].push(tomorrowStr);
+      
+      saveState();
+      updateTrackerScreen();
+      showToast('Lifeline used for tomorrow');
+    });
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchScreen(btn.dataset.screen);
+      });
+    });
+
+    document.getElementById('addRewardBtn').addEventListener('click', () => {
+      const modal = document.getElementById('modalOverlay');
+      const modalContent = document.getElementById('modalContent');
+      
+      modalContent.innerHTML = `
+        <div class="form-group">
+          <label>Reward name</label>
+          <input type="text" class="modal-input" id="rewardTitle" placeholder="e.g., a massage">
+        </div>
+        <div class="form-group">
+          <label>Target (days)</label>
+          <input type="number" class="modal-input" id="rewardTarget" placeholder="e.g., 12" value="12">
+        </div>
+      `;
+      
+      document.getElementById('modalTitle').textContent = 'Add reward';
+      document.getElementById('modalConfirm').textContent = 'Add';
+      document.getElementById('modalConfirm').onclick = () => {
+        const title = document.getElementById('rewardTitle').value;
+        const target = parseInt(document.getElementById('rewardTarget').value) || 12;
+        
+        if (title) {
+          state.rewards.push({
+            id: generateId(),
+            title,
+            target,
+            claimed: false,
+            claimedMonth: null
+          });
+          saveState();
+          updateRewardsScreen();
+          modal.classList.remove('active');
+          showToast('Reward added');
+        }
+      };
+      
+      modal.classList.add('active');
+    });
+
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      switchScreen('settings');
+      document.getElementById('settingsName').value = state.settings.name;
+      document.getElementById('settingsGoal').value = state.settings.stepGoal;
+      document.getElementById('settingsCal').value = state.settings.calPerThousand;
+      document.getElementById('settingsRemind').value = state.settings.remindAt;
+    });
+
+    document.getElementById('infoBtn').addEventListener('click', () => {
+      const modal = document.getElementById('modalOverlay');
+      const modalContent = document.getElementById('modalContent');
+      
+      modalContent.innerHTML = `
+        <p style="line-height: 1.6; color: #ccc;">
+          <strong>Streak:</strong> Consecutive met days from today or yesterday.<br><br>
+          <strong>Met day:</strong> Either your step goal is reached, or you've used a lifeline.<br><br>
+          <strong>Lifelines:</strong> Two per month. Use one if you miss a day and want to keep your streak alive.<br><br>
+          <strong>Rewards:</strong> Set targets for met days each month and claim them once you hit the target.
+        </p>
+      `;
+      
+      document.getElementById('modalTitle').textContent = 'How it works';
+      document.getElementById('modalConfirm').style.display = 'none';
+      document.getElementById('modalCancel').textContent = 'Close';
+      modal.classList.add('active');
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', downloadBackup);
+    document.getElementById('restoreBtn').addEventListener('click', restoreBackup);
+    document.getElementById('resetBtn').addEventListener('click', resetData);
+
+    document.getElementById('backupFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            state = JSON.parse(event.target.result);
+            saveState();
+            updateTrackerScreen();
+            updateHistoryScreen();
+            updateRewardsScreen();
+            showToast('Data restored');
+          } catch (err) {
+            showToast('Failed to restore backup');
+          }
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    // Settings changes
+    ['settingsName', 'settingsGoal', 'settingsCal', 'settingsRemind'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        state.settings.name = document.getElementById('settingsName').value;
+        state.settings.stepGoal = parseInt(document.getElementById('settingsGoal').value);
+        state.settings.calPerThousand = parseInt(document.getElementById('settingsCal').value);
+        state.settings.remindAt = document.getElementById('settingsRemind').value;
+        saveState();
+      });
+    });
+
+    document.getElementById('modalCancel').addEventListener('click', () => {
+      document.getElementById('modalOverlay').classList.remove('active');
+      document.getElementById('modalConfirm').style.display = 'block';
+    });
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {
+        // Service worker registration failed, app still works offline to some extent
+      });
+    }
+
+    // Initialize
+    loadState();
+    if (state.onboarded) {
+      document.getElementById('onboardScreen').classList.remove('active');
+      document.getElementById('trackerScreen').classList.add('active');
+      updateTrackerScreen();
+    }
+  </script>
+</body>
+</html>
